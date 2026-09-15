@@ -1,7 +1,6 @@
 import json
 import secrets
 import os
-import hmac
 import psycopg
 from psycopg.rows import dict_row
 from datetime import datetime, timedelta
@@ -16,14 +15,6 @@ PORT = int(os.environ.get("PORT", "8787"))
 
 BASE = Path(__file__).resolve().parent
 DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
-ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN", "").strip()
-
-def admin_authorized(handler):
-    if not ADMIN_TOKEN:
-        return False
-    supplied = handler.headers.get("X-Admin-Token", "").strip()
-    return hmac.compare_digest(supplied, ADMIN_TOKEN)
-
 
 DB = BASE / "license.db"
 
@@ -219,13 +210,6 @@ class LicenseHandler(BaseHTTPRequestHandler):
             return
 
         if path == "/api/customers":
-            if not admin_authorized(self):
-                self.send_json({
-                    "ok": False,
-                    "error": "ADMIN_UNAUTHORIZED"
-                }, 401)
-                return
-
             con = get_db()
 
             rows = con.execute(
@@ -264,32 +248,14 @@ class LicenseHandler(BaseHTTPRequestHandler):
         data = self.read_json()
 
         if path == "/api/customer/create":
-            if not admin_authorized(self):
-                self.send_json({
-                    "ok": False,
-                    "error": "ADMIN_UNAUTHORIZED"
-                }, 401)
-                return
             self.create_customer(data)
             return
 
         if path == "/api/customer/update":
-            if not admin_authorized(self):
-                self.send_json({
-                    "ok": False,
-                    "error": "ADMIN_UNAUTHORIZED"
-                }, 401)
-                return
             self.update_customer(data)
             return
 
         if path == "/api/license/create":
-            if not admin_authorized(self):
-                self.send_json({
-                    "ok": False,
-                    "error": "ADMIN_UNAUTHORIZED"
-                }, 401)
-                return
             self.create_license(data)
             return
 
@@ -306,22 +272,10 @@ class LicenseHandler(BaseHTTPRequestHandler):
             return
 
         if path == "/api/license/deactivate":
-            if not admin_authorized(self):
-                self.send_json({
-                    "ok": False,
-                    "error": "ADMIN_UNAUTHORIZED"
-                }, 401)
-                return
             self.deactivate_license(data)
             return
 
         if path == "/api/license/extend":
-            if not admin_authorized(self):
-                self.send_json({
-                    "ok": False,
-                    "error": "ADMIN_UNAUTHORIZED"
-                }, 401)
-                return
             self.extend_license(data)
             return
 
